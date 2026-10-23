@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { SECTORS, type ParkingSpace } from '@/constants/parking-layout';
@@ -22,11 +23,16 @@ type Props = {
 
 /** Detalle del cajón: número, estado, tiempo y costo acumulado. */
 export function SpotSheet({ space, now, myStayId, onClose, onPark, onToggle, onShowStay }: Props) {
+  // Guarda el último cajón para que la hoja no se vacíe mientras baja al cerrarse
+  const [lastSpace, setLastSpace] = useState(space);
+  if (space && space !== lastSpace) setLastSpace(space);
+  const shown = space ?? lastSpace;
+
   return (
     <BottomSheet visible={!!space} onClose={onClose}>
-      {space ? (
+      {shown ? (
         <SheetContent
-          space={space}
+          space={shown}
           now={now}
           myStayId={myStayId}
           onPark={onPark}
