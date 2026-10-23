@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { ControlHeight, Radius, Shadow, Space, Type } from '@/constants/theme';
+import { ControlHeight, Motion, Radius, Shadow, Space, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
@@ -32,10 +32,10 @@ export function Button({ title, onPress, variant = 'primary', icon, disabled, st
         disabled={disabled}
         onPress={onPress}
         onPressIn={() => {
-          if (!reduceMotion) scale.set(withSpring(0.97));
+          if (!reduceMotion) scale.set(withTiming(Motion.pressScale, Motion.press));
         }}
         onPressOut={() => {
-          scale.set(withSpring(1));
+          scale.set(withTiming(1, Motion.press));
         }}
         style={({ pressed }) => [
           styles.base,

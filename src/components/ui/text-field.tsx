@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { use, useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ControlHeight, Radius, Space, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+import { InputFocusContext } from './focus-context';
 import { Icon } from './icon';
 
 type Props = Omit<TextInputProps, 'style'> & {
@@ -18,6 +19,7 @@ export function TextField({ invalid, password, onFocus, onBlur, ...rest }: Props
   const theme = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
+  const revealInput = use(InputFocusContext);
 
   const borderColor = invalid ? theme.danger : focused ? theme.accent : 'transparent';
 
@@ -28,6 +30,7 @@ export function TextField({ invalid, password, onFocus, onBlur, ...rest }: Props
         secureTextEntry={password && hidden}
         onFocus={(e) => {
           setFocused(true);
+          revealInput?.();
           onFocus?.(e);
         }}
         onBlur={(e) => {

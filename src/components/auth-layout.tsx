@@ -1,7 +1,19 @@
-import type { PropsWithChildren } from 'react';
-import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, type ComponentRef, type PropsWithChildren } from 'react';
+import {
+  Animated,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { InputFocusContext } from '@/components/ui/focus-context';
 import { Icon } from '@/components/ui/icon';
 import { Space, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -11,6 +23,29 @@ type Props = PropsWithChildren<{ animatedStyle: object; onBack?: () => void }>;
 /** Contenedor común de entrar y registro: fondo azul pálido y el teclado no tapa los campos. */
 export function AuthLayout({ animatedStyle, onBack, children }: Props) {
   const theme = useTheme();
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const contentRef = useRef<ComponentRef<typeof View>>(null);
+
+  // Desplaza la pantalla para que el campo con foco quede arriba del teclado
+  const revealFocused = useCallback(() => {
+    setTimeout(() => {
+      const input = TextInput.State.currentlyFocusedInput();
+      const content = contentRef.current;
+      if (!input || !content) return;
+      input.measureLayout(
+        content,
+        (_x, y) => scrollRef.current?.scrollTo({ y: Math.max(0, y - Space[12] * 2), animated: true }),
+        () => {}
+      );
+    }, 120);
+  }, []);
+
+  // Al abrir el teclado (o cambiar de tamaño) vuelve a mostrar el campo activo
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', revealFocused);
+    return () => sub.remove();
+  }, [revealFocused]);
+
   return (
     <View style={[styles.flex, { backgroundColor: theme.surface100 }]}>
       <SafeAreaView style={styles.flex}>
@@ -24,9 +59,20 @@ export function AuthLayout({ animatedStyle, onBack, children }: Props) {
             <Icon name="back" size={24} color={theme.ink} />
           </Pressable>
         ) : null}
-        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <Animated.View style={[styles.column, animatedStyle]}>{children}</Animated.View>
+        {/* Android dibuja de borde a borde: la ventana ya no se encoge con el teclado,
+            así que el espacio se agrega con padding en ambas plataformas */}
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'web' ? undefined : 'padding'}>
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}>
+            <View ref={contentRef} collapsable={false}>
+              <InputFocusContext value={revealFocused}>
+                <Animated.View style={[styles.column, animatedStyle]}>{children}</Animated.View>
+              </InputFocusContext>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

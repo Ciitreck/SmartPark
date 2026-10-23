@@ -11,11 +11,13 @@ import { Wordmark } from '@/components/ui/wordmark';
 import { Space } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useEntranceShake } from '@/hooks/use-entrance-shake';
+import { useKeyboardVisible } from '@/hooks/use-keyboard';
 import { login, type AuthField } from '@/lib/auth';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const { style, shake } = useEntranceShake();
+  const keyboardOpen = useKeyboardVisible();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,10 +46,13 @@ export default function LoginScreen() {
   return (
     <AuthLayout animatedStyle={style}>
       <View style={styles.hero}>
-        <View style={styles.cars}>
-          <CarMascot tone="mint" width={120} wave />
-          <CarMascot tone="sky" width={96} flip delay={150} />
-        </View>
+        {/* Con el teclado abierto se esconden los carritos para dejar espacio a los campos */}
+        {keyboardOpen ? null : (
+          <View style={styles.cars}>
+            <CarMascot tone="mint" width={120} wave />
+            <CarMascot tone="sky" width={96} flip delay={150} />
+          </View>
+        )}
         <Wordmark size={40} />
         <ThemedText color="inkMuted" align="center">
           Encuentra lugar sin dar vueltas

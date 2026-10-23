@@ -1,7 +1,7 @@
 import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Path, Rect } from 'react-native-svg';
 
-import { Colors } from '@/constants/theme';
+import { Colors, Motion } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -21,7 +21,7 @@ type Props = {
 const OUTLINE = Colors.light.ink;
 const WHITE = '#FFFFFF';
 
-/** Carrito plano visto de lado, con cara. Aparece con un rebote, una sola vez. */
+/** Carrito plano visto de lado, con cara. Aparece subiendo suave, una sola vez. */
 export function CarMascot({ tone = 'mint', width = 140, wave, sad, flip, delay = 0 }: Props) {
   const theme = useTheme();
   const body = theme[tone];
@@ -29,7 +29,7 @@ export function CarMascot({ tone = 'mint', width = 140, wave, sad, flip, delay =
 
   return (
     <Animated.View
-      entering={FadeInDown.delay(delay).springify().damping(12).reduceMotion(ReduceMotion.System)}
+      entering={FadeInDown.delay(delay).duration(Motion.enter).easing(Motion.enterEasing).reduceMotion(ReduceMotion.System)}
       style={{ width, height, transform: [{ scaleX: flip ? -1 : 1 }] }}
       accessible={false}>
       <Svg width={width} height={height} viewBox="0 0 120 80">

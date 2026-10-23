@@ -10,11 +10,13 @@ import { TextField } from '@/components/ui/text-field';
 import { Space } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useEntranceShake } from '@/hooks/use-entrance-shake';
+import { useKeyboardVisible } from '@/hooks/use-keyboard';
 import { register, type AuthField } from '@/lib/auth';
 
 export default function RegisterScreen() {
   const { signIn } = useAuth();
   const { style, shake } = useEntranceShake();
+  const keyboardOpen = useKeyboardVisible();
 
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
@@ -48,7 +50,8 @@ export default function RegisterScreen() {
         <ThemedText variant="display" align="center" accessibilityRole="header">
           Únete a SmartPark
         </ThemedText>
-        <CarMascot tone="mint" width={130} wave />
+        {/* Con el teclado abierto se esconde el carrito para dejar espacio a los campos */}
+        {keyboardOpen ? null : <CarMascot tone="mint" width={130} wave />}
       </View>
 
       <TextField

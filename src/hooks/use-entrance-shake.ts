@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Animated } from 'react-native';
+import { Animated, Easing } from 'react-native';
 
 /**
  * Animación de entrada (aparece desde abajo) y "sacudida" para errores.
@@ -10,22 +10,22 @@ export function useEntranceShake() {
   const [shakeX] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
-    Animated.timing(appear, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+    Animated.timing(appear, { toValue: 1, duration: 320, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [appear]);
 
   const shake = () => {
     Animated.sequence([
-      Animated.timing(shakeX, { toValue: 10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: -10, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 6, duration: 60, useNativeDriver: true }),
-      Animated.timing(shakeX, { toValue: 0, duration: 60, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 6, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: -6, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 3, duration: 50, useNativeDriver: true }),
+      Animated.timing(shakeX, { toValue: 0, duration: 50, useNativeDriver: true }),
     ]).start();
   };
 
   const style = {
     opacity: appear,
     transform: [
-      { translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) },
+      { translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
       { translateX: shakeX },
     ],
   };

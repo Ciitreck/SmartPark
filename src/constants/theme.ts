@@ -6,6 +6,7 @@
 import '@/global.css';
 
 import { Platform, type TextStyle } from 'react-native';
+import { Easing } from 'react-native-reanimated';
 
 const light = {
   surface100: '#EAF3FD',
@@ -101,6 +102,21 @@ export const Shadow = {
   card: { boxShadow: '0 4px 16px rgba(42,91,240,0.10)' },
   button: { boxShadow: '0 6px 16px rgba(42,91,240,0.30)' },
   sheet: { boxShadow: '0 -6px 24px rgba(27,43,75,0.14)' },
+} as const;
+
+/**
+ * Movimiento: transiciones cortas que frenan suave, sin rebotes.
+ * Respeta "Reducir movimiento" en cada componente.
+ */
+export const Motion = {
+  /** Botones y cajones al presionar */
+  press: { duration: 120, easing: Easing.out(Easing.quad) },
+  pressScale: 0.97,
+  /** Cambios de color y estado */
+  fade: { duration: 200 },
+  /** Entrada de ilustraciones, hojas y pantallas */
+  enter: 320,
+  enterEasing: Easing.out(Easing.cubic),
 } as const;
 
 /** Alto de botones e inputs (al alcance del pulgar). */

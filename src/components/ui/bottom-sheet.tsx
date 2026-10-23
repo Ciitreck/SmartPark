@@ -3,12 +3,12 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, ReduceMotion, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Radius, Shadow, Space } from '@/constants/theme';
+import { Motion, Radius, Shadow, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = PropsWithChildren<{ visible: boolean; onClose: () => void }>;
 
-/** Hoja inferior con esquinas `radius-lg` y entrada con resorte. */
+/** Hoja inferior con esquinas `radius-lg` que sube suave, sin rebote. */
 export function BottomSheet({ visible, onClose, children }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -16,11 +16,11 @@ export function BottomSheet({ visible, onClose, children }: Props) {
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <View style={styles.root}>
-        <Animated.View entering={FadeIn.duration(200)} style={[StyleSheet.absoluteFill, { backgroundColor: theme.scrim }]}>
+        <Animated.View entering={FadeIn.duration(Motion.fade.duration)} style={[StyleSheet.absoluteFill, { backgroundColor: theme.scrim }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Cerrar" />
         </Animated.View>
         <Animated.View
-          entering={SlideInDown.springify().damping(18).stiffness(180).reduceMotion(ReduceMotion.System)}
+          entering={SlideInDown.duration(Motion.enter).easing(Motion.enterEasing).reduceMotion(ReduceMotion.System)}
           style={[
             styles.sheet,
             Shadow.sheet,

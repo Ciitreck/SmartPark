@@ -4,12 +4,11 @@ import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
 import type { ParkingSpace, SpotStatus } from '@/constants/parking-layout';
-import { Radius, Space, Type, type Palette } from '@/constants/theme';
+import { Motion, Radius, Space, Type, type Palette } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import Car from './car';
@@ -58,7 +57,7 @@ export default function ParkingSpot({ space, status, width, height, selected, mi
   const hasCar = status === 'ocupado' || status === 'excedido';
 
   // Fundido de color 200 ms
-  const fillStyle = useAnimatedStyle(() => ({ backgroundColor: withTiming(fill, { duration: reduceMotion ? 0 : 200 }) }));
+  const fillStyle = useAnimatedStyle(() => ({ backgroundColor: withTiming(fill, { duration: reduceMotion ? 0 : Motion.fade.duration }) }));
 
   // El carrito entra deslizando 12 dp desde el carril + fade, 250 ms
   const car = useSharedValue(hasCar ? 1 : 0);
@@ -83,10 +82,10 @@ export default function ParkingSpot({ space, status, width, height, selected, mi
       accessibilityState={{ selected }}
       onPress={onPress}
       onPressIn={() => {
-        if (!reduceMotion) scale.set(withSpring(0.94));
+        if (!reduceMotion) scale.set(withTiming(Motion.pressScale, Motion.press));
       }}
       onPressOut={() => {
-        scale.set(withSpring(1));
+        scale.set(withTiming(1, Motion.press));
       }}>
       <Animated.View
         style={[
