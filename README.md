@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/images/smart-park.png" alt="SmartPark logo" width="140" />
+<img src="assets/images/icon.png" alt="SmartPark logo" width="140" />
 
 # 🅿️ SmartPark
 
