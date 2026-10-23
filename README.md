@@ -19,6 +19,15 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 ![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-66BB6A?style=flat-square)
 ![Plataforma](https://img.shields.io/badge/plataforma-Android%20%7C%20Web-2B2F36?style=flat-square)
 
+<br />
+<br />
+
+<a href="https://github.com/Ciitreck/SmartPark/releases/latest">
+  <img src="https://img.shields.io/badge/⬇️_Descargar_APK-Android-208AEF?style=for-the-badge&logo=android&logoColor=white" alt="Descargar APK" height="44" />
+</a>
+
+<sub>Descarga el archivo <code>.apk</code> de la última versión e instálalo en tu teléfono Android.</sub>
+
 </div>
 
 ---
