@@ -16,7 +16,7 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 ![Firebase](https://img.shields.io/badge/Firebase_Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-208AEF?style=flat-square)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.0-66BB6A?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.1-66BB6A?style=flat-square)
 ![Plataforma](https://img.shields.io/badge/plataforma-Android%20%7C%20Web-2B2F36?style=flat-square)
 
 <br />
