@@ -46,3 +46,8 @@ example
 .idea/
 .continue/
 Model/
+
+# Configuración local del editor y del asistente
+.vscode/
+AGENTS.md
+.claude/
