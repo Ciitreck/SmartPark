@@ -26,6 +26,7 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 ## 📋 Tabla de contenido
 
 - [¿Qué es SmartPark?](#-qué-es-smartpark)
+- [Capturas](#-capturas)
 - [Funciones](#-funciones)
 - [Tecnologías](#️-tecnologías)
 - [Cómo funciona](#-cómo-funciona)
@@ -42,6 +43,18 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 **SmartPark** muestra el estacionamiento como un mapa de cajones sobre asfalto. De un vistazo sabes cuántos lugares quedan libres y dónde están. Al tocar un cajón cambia de **libre** a **ocupado**: un carrito entra animado al lugar y el contador se actualiza al momento.
 
 > 🎯 **Objetivo:** reducir el tiempo que se pierde buscando dónde estacionarse.
+
+---
+
+## 📸 Capturas
+
+<div align="center">
+
+| 🔐 Inicio de sesión |
+|:-:|
+| <img src="docs/screenshots/login.png" alt="Pantalla de inicio de sesión de SmartPark" width="300" /> |
+
+</div>
 
 ---
 
