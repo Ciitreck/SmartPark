@@ -16,7 +16,7 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 ![Firebase](https://img.shields.io/badge/Firebase_Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-208AEF?style=flat-square)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-1.0.1-66BB6A?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-2.0.0-66BB6A?style=flat-square)
 ![Plataforma](https://img.shields.io/badge/plataforma-Android%20%7C%20Web-2B2F36?style=flat-square)
 
 <br />
@@ -49,7 +49,7 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 
 ## 🚗 ¿Qué es SmartPark?
 
-**SmartPark** muestra el estacionamiento como un mapa de cajones sobre asfalto. De un vistazo sabes cuántos lugares quedan libres y dónde están. Al tocar un cajón cambia de **libre** a **ocupado**: un carrito entra animado al lugar y el contador se actualiza al momento.
+**SmartPark** muestra el estacionamiento como un mapa de cajones dividido en sectores. De un vistazo sabes cuántos lugares quedan libres y dónde están. Eliges un cajón, te estacionas y la app lleva la cuenta de tu tiempo y de lo que vas a pagar. Para la empresa hay un panel con la ocupación y los cobros del día.
 
 > 🎯 **Objetivo:** reducir el tiempo que se pierde buscando dónde estacionarse.
 
@@ -73,11 +73,15 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 |:-:|---|---|
 | 🔐 | **Cuentas de usuario** | Registro e inicio de sesión con correo y contraseña (Firebase Authentication). |
 | 🛡️ | **Rutas protegidas** | Si no has iniciado sesión, la app te manda al login. |
-| 🗺️ | **Mapa de cajones** | 20 lugares en 2 filas que se ajustan al ancho de cualquier pantalla. |
-| 🟢 | **Contador en vivo** | "X de 20 lugares disponibles", con un pequeño rebote cada vez que cambia. |
-| 🚙 | **Animaciones** | Los carros entran y salen del cajón; los botones responden al toque. |
-| 💾 | **Guarda el estado** | Los cajones se conservan aunque cierres la app (SQLite KV Store). |
-| 🌗 | **Modo claro y oscuro** | Sigue el tema del teléfono. |
+| 🗺️ | **Mapa por sectores** | 30 cajones en 3 sectores (A, B y C). Al abrir, te muestra el sector con más lugares libres. |
+| 🚦 | **Estados del cajón** | Libre, ocupado, reservado (discapacidad o preferente), tiempo excedido y sin señal del sensor. |
+| 📋 | **Detalle del cajón** | Una hoja inferior con número, sector, tiempo y costo acumulado, y el botón **"Estacionarme aquí"**. |
+| ⏱️ | **Tu estancia** | Cronómetro en vivo de cuánto llevas estacionado y un resumen con el total al salir. |
+| 💵 | **Tarifa** | Las primeras 2 h son gratis; después, $15 MXN por hora o fracción. |
+| 📊 | **Panel de empresa** | Ocupación general y por área, tiempo promedio, cobros del día, lo que falta por cobrar y cajones sin señal. |
+| 🚙 | **Animaciones suaves** | Carros que entran y salen del cajón, una mascota y transiciones cortas sin rebote. |
+| 💾 | **Guarda el estado** | Cajones, tu estancia y el historial se conservan aunque cierres la app. |
+| 🌗 | **Modo claro y oscuro** | Design system propio con tipografías Nunito e Inter. |
 | 🗣️ | **En español** | Mensajes de error claros ("Correo o contraseña incorrectos", "Sin conexión"…). |
 
 ---
@@ -92,7 +96,8 @@ App móvil para ver y administrar en tiempo real los cajones disponibles de un e
 | Lenguaje | TypeScript |
 | Navegación | [Expo Router](https://docs.expo.dev/router/introduction/) (rutas por archivos, *typed routes*) |
 | Autenticación | [Firebase Auth](https://firebase.google.com/docs/auth) |
-| Almacenamiento local | `expo-sqlite/kv-store` |
+| Almacenamiento local | `expo-sqlite/kv-store` (Android) · `localStorage` (web) |
+| Diseño | Design system propio, tipografías Nunito + Inter, `react-native-svg` |
 | Animaciones | React Native Animated + Reanimated |
 | Builds | [EAS Build](https://docs.expo.dev/build/introduction/) |
 
@@ -107,12 +112,14 @@ flowchart LR
     A([📱 Abrir app]) --> B{¿Sesión iniciada?}
     B -- No --> C[🔐 Login / Registro]
     C -->|Firebase Auth| B
-    B -- Sí --> D[🗺️ Mapa de cajones]
-    D -->|Tocar cajón| E[🚙 Libre ⇄ Ocupado]
-    E --> F[(💾 SQLite KV)]
-    E --> G[🟢 Contador se actualiza]
-    D --> H[👤 Mi cuenta]
-    H -->|Cerrar sesión| C
+    B -- Sí --> D[🗺️ Lugares por sector]
+    D -->|Tocar cajón| E[📋 Detalle del cajón]
+    E -->|Estacionarme aquí| F[⏱️ Estancia en curso]
+    F -->|Salir del cajón| G[🧾 Resumen y cobro]
+    G --> H[(💾 Guardado local)]
+    H --> I[📊 Panel de empresa]
+    D --> J[👤 Cuenta]
+    J -->|Cerrar sesión| C
 ```
 
 ---
@@ -186,16 +193,19 @@ SmartPark/
 ├── src/
 │   ├── app/                # Pantallas (Expo Router)
 │   │   ├── (tabs)/
-│   │   │   ├── index.tsx   # 🗺️ Mapa del estacionamiento
+│   │   │   ├── index.tsx   # 🗺️ Lugares por sector
+│   │   │   ├── stay.tsx    # ⏱️ Tu estancia y cobro
+│   │   │   ├── panel.tsx   # 📊 Panel de empresa
 │   │   │   └── account.tsx # 👤 Mi cuenta
 │   │   ├── login.tsx       # 🔐 Iniciar sesión
 │   │   ├── register.tsx    # ✍️ Crear cuenta
 │   │   └── _layout.tsx     # Rutas protegidas
-│   ├── components/         # Mapa, cajón, carro, formularios…
-│   ├── constants/          # Distribución de cajones y tema
-│   ├── context/auth.tsx    # Estado de sesión
-│   ├── hooks/              # Tema y animaciones
-│   └── lib/                # Firebase, auth y guardado local
+│   ├── components/         # Mapa, cajón, hoja de detalle, formularios…
+│   │   └── ui/             # Design system: botón, tarjeta, cronómetro, mascota…
+│   ├── constants/          # Sectores, cajones y tema
+│   ├── context/            # Sesión y estado del estacionamiento
+│   ├── hooks/              # Tema, teclado, reloj y animaciones
+│   └── lib/                # Firebase, auth, tarifas y guardado local
 ├── app.json                # Configuración de Expo
 └── eas.json                # Perfiles de build
 ```
@@ -219,10 +229,12 @@ SmartPark/
 - [x] Rutas protegidas
 - [x] Mapa de cajones con animaciones
 - [x] Guardar el estado de los cajones en el teléfono
+- [x] Sectores y niveles
+- [x] Estancia con cronómetro y tarifa
+- [x] Panel de empresa
 - [ ] Sincronizar los cajones en la nube para todos los usuarios
-- [ ] Varios estacionamientos y niveles
 - [ ] Reservar un lugar
-- [ ] Integración con sensores físicos de ocupación
+- [ ] Integración con sensores físicos de ocupación (Arduino)
 - [ ] Publicar en Google Play
 
 ---
