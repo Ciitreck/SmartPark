@@ -11,7 +11,9 @@ import { auth } from '@/lib/firebase';
 
 export type User = { uid: string; email: string; name: string };
 
-type AuthResult = { ok: true; user: User } | { ok: false; error: string };
+export type AuthField = 'name' | 'email' | 'password' | 'confirm';
+
+type AuthResult = { ok: true; user: User } | { ok: false; error: string; field?: AuthField };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -27,39 +29,42 @@ export function toUser(fbUser: FirebaseUser): User {
 }
 
 /** Traduce los códigos de error de Firebase a mensajes para el usuario. */
-function errorMessage(err: unknown): string {
+function failure(err: unknown): { ok: false; error: string; field?: AuthField } {
   const code = err instanceof FirebaseError ? err.code : '';
   switch (code) {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
     case 'auth/user-not-found':
-      return 'Correo o contraseña incorrectos';
+      return { ok: false, error: 'Correo o contraseña incorrectos' };
     case 'auth/invalid-email':
-      return 'El correo no es válido';
+      return { ok: false, error: 'Revisa tu correo, parece que le falta algo', field: 'email' };
     case 'auth/email-already-in-use':
-      return 'Ya existe una cuenta con ese correo';
+      return { ok: false, error: 'Ya hay una cuenta con ese correo. ¿Quieres entrar?', field: 'email' };
     case 'auth/weak-password':
-      return 'La contraseña debe tener al menos 6 caracteres';
+      return { ok: false, error: 'Tu contraseña necesita al menos 6 caracteres', field: 'password' };
     case 'auth/too-many-requests':
-      return 'Demasiados intentos. Espera un momento e inténtalo de nuevo';
+      return { ok: false, error: 'Demasiados intentos. Espera un momento y vuelve a intentarlo' };
     case 'auth/network-request-failed':
-      return 'Sin conexión. Revisa tu internet';
+      return { ok: false, error: 'Sin conexión. Revisa tu internet y vuelve a intentarlo' };
     default:
-      return 'Ocurrió un error. Inténtalo de nuevo';
+      return { ok: false, error: 'Algo salió mal. Vuelve a intentarlo' };
   }
 }
 
 export async function login(email: string, password: string): Promise<AuthResult> {
   const cleanEmail = email.trim().toLowerCase();
-  if (!cleanEmail || !password) {
-    return { ok: false, error: 'Escribe tu correo y contraseña' };
+  if (!cleanEmail) {
+    return { ok: false, error: 'Escribe tu correo', field: 'email' };
+  }
+  if (!password) {
+    return { ok: false, error: 'Ya casi, solo falta tu contraseña', field: 'password' };
   }
 
   try {
     const { user } = await signInWithEmailAndPassword(auth, cleanEmail, password);
     return { ok: true, user: toUser(user) };
   } catch (err) {
-    return { ok: false, error: errorMessage(err) };
+    return failure(err);
   }
 }
 
@@ -72,17 +77,17 @@ export async function register(
   const cleanName = name.trim();
   const cleanEmail = email.trim().toLowerCase();
 
-  if (!cleanName || !cleanEmail || !password) {
-    return { ok: false, error: 'Completa todos los campos' };
-  }
   if (!EMAIL_RE.test(cleanEmail)) {
-    return { ok: false, error: 'El correo no es válido' };
+    return { ok: false, error: 'Escribe un correo válido, como nombre@correo.com', field: 'email' };
+  }
+  if (!cleanName) {
+    return { ok: false, error: '¿Cómo te llamas? Escribe tu nombre', field: 'name' };
   }
   if (password.length < 6) {
-    return { ok: false, error: 'La contraseña debe tener al menos 6 caracteres' };
+    return { ok: false, error: 'Tu contraseña necesita al menos 6 caracteres', field: 'password' };
   }
   if (password !== confirm) {
-    return { ok: false, error: 'Las contraseñas no coinciden' };
+    return { ok: false, error: 'Las contraseñas no coinciden. Escríbela otra vez', field: 'confirm' };
   }
 
   try {
@@ -91,7 +96,7 @@ export async function register(
     await updateProfile(user, { displayName: cleanName });
     return { ok: true, user: toUser(user) };
   } catch (err) {
-    return { ok: false, error: errorMessage(err) };
+    return failure(err);
   }
 }
 

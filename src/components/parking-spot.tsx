@@ -1,84 +1,160 @@
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { useEffect } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
-import type { ParkingSpace } from '@/constants/parking-layout';
+import type { ParkingSpace, SpotStatus } from '@/constants/parking-layout';
+import { Radius, Space, Type, type Palette } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+
 import Car from './car';
+import { Icon } from './ui/icon';
 
-const CAR_COLORS = ['#E53935', '#1E88E5', '#FDD835', '#8E24AA', '#FB8C00', '#00ACC1', '#6D4C41', '#90A4AE'];
+export const STATUS_LABEL: Record<SpotStatus, string> = {
+  libre: 'Libre',
+  ocupado: 'Ocupado',
+  reservado: 'Reservado',
+  excedido: 'Tiempo excedido',
+  sinSenal: 'Sin señal',
+};
+
+const CLEAR = 'rgba(0,0,0,0)';
+
+/** Relleno y color de texto/ícono de cada estado (tabla "Estados del cajón"). */
+export function spotColors(status: SpotStatus, theme: Palette) {
+  switch (status) {
+    case 'libre':
+      return { fill: theme.spotFree, on: theme.inkOnBright };
+    case 'ocupado':
+      return { fill: theme.spotOccupied, on: theme.inkOnDark };
+    case 'reservado':
+      return { fill: theme.spotReserved, on: theme.inkOnBright };
+    case 'excedido':
+      return { fill: theme.spotOvertime, on: theme.inkOnBright };
+    case 'sinSenal':
+      return { fill: CLEAR, on: theme.spotOffline };
+  }
+}
 
 type Props = {
   space: ParkingSpace;
+  status: SpotStatus;
   width: number;
-  index: number;
+  height: number;
+  selected: boolean;
+  mine: boolean;
   onPress: () => void;
 };
 
-export default function ParkingSpot({ space, width, index, onPress }: Props) {
-  const height = width * 1.6;
-  const occupied = !space.isAvailable;
-  const color = CAR_COLORS[parseInt(space.id, 10) % CAR_COLORS.length];
+export default function ParkingSpot({ space, status, width, height, selected, mine, onPress }: Props) {
+  const theme = useTheme();
+  const reduceMotion = useReducedMotion();
+  const { fill, on } = spotColors(status, theme);
+  const hasCar = status === 'ocupado' || status === 'excedido';
 
-  const [parked] = useState(() => new Animated.Value(0)); // 0 = vacío, 1 = estacionado
-  const [press] = useState(() => new Animated.Value(1));
-  const first = useRef(true);
+  // Fundido de color 200 ms
+  const fillStyle = useAnimatedStyle(() => ({ backgroundColor: withTiming(fill, { duration: reduceMotion ? 0 : 200 }) }));
 
+  // El carrito entra deslizando 12 dp desde el carril + fade, 250 ms
+  const car = useSharedValue(hasCar ? 1 : 0);
   useEffect(() => {
-    Animated.spring(parked, {
-      toValue: occupied ? 1 : 0,
-      delay: first.current ? index * 60 : 0, // al abrir, los carros entran uno tras otro
-      friction: 7,
-      tension: 50,
-      useNativeDriver: true,
-    }).start();
-    first.current = false;
-  }, [occupied, index, parked]);
+    car.set(withTiming(hasCar ? 1 : 0, { duration: reduceMotion ? 0 : 250 }));
+  }, [hasCar, car, reduceMotion]);
+  const fromLane = space.row === 1 ? 12 : -12;
+  const carStyle = useAnimatedStyle(() => ({
+    opacity: car.get(),
+    transform: [{ translateY: (1 - car.get()) * fromLane }],
+  }));
 
-  const carTranslate = parked.interpolate({ inputRange: [0, 1], outputRange: [-height, 0] });
-  const carOpacity = parked.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1], extrapolate: 'clamp' });
-  const pOpacity = parked.interpolate({ inputRange: [0, 1], outputRange: [1, 0], extrapolate: 'clamp' });
+  const scale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+
+  const carWidth = Math.min(width * 0.5, (height - 24) / 1.7);
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Cajón ${space.id}, ${STATUS_LABEL[status]}${mine ? ', tu lugar' : ''}`}
+      accessibilityState={{ selected }}
       onPress={onPress}
-      onPressIn={() => Animated.spring(press, { toValue: 0.94, useNativeDriver: true }).start()}
-      onPressOut={() => Animated.spring(press, { toValue: 1, useNativeDriver: true }).start()}>
+      onPressIn={() => {
+        if (!reduceMotion) scale.set(withSpring(0.94));
+      }}
+      onPressOut={() => {
+        scale.set(withSpring(1));
+      }}>
       <Animated.View
         style={[
-          styles.slot,
-          { width, height, transform: [{ scale: press }] },
-          occupied ? styles.slotOccupied : styles.slotFree,
+          styles.spot,
+          { width, height },
+          status === 'sinSenal' && { borderWidth: 2, borderStyle: 'dashed', borderColor: theme.spotOffline },
+          fillStyle,
+          pressStyle,
         ]}>
-        <Animated.Text style={[styles.parkLetter, { opacity: pOpacity }]}>P</Animated.Text>
+        <Text style={[Type.spotNumber, { color: on }]}>{space.id}</Text>
 
-        <Animated.View style={[styles.carWrap, { opacity: carOpacity, transform: [{ translateY: carTranslate }] }]}>
-          <Car width={width * 0.62} color={color} />
-        </Animated.View>
+        <View style={styles.center}>
+          {status === 'reservado' ? (
+            <Icon name={space.reservedFor === 'discapacidad' ? 'accessible' : 'star'} size={20} color={on} />
+          ) : null}
+          {status === 'sinSenal' ? <Icon name="offline" size={20} color={on} /> : null}
+          <Animated.View style={[StyleSheet.absoluteFill, styles.center, carStyle]} pointerEvents="none">
+            <Car width={carWidth} color={theme.inkOnDark} glass={theme.asphalt} />
+          </Animated.View>
+        </View>
 
-        <Text style={[styles.label, occupied ? styles.labelOccupied : styles.labelFree]}>{space.id}</Text>
+        {/* Badge de cobro */}
+        {status === 'excedido' ? (
+          <View style={[styles.badge, { backgroundColor: theme.inkOnBright }]}>
+            <Text style={[styles.badgeText, { color: theme.spotOvertime }]}>$</Text>
+          </View>
+        ) : null}
+        {/* Tu lugar */}
+        {mine ? (
+          <View style={[styles.mine, { backgroundColor: theme.inkOnDark }]}>
+            <Icon name="pin" size={12} color={theme.brand} />
+          </View>
+        ) : null}
+        {/* Seleccionado */}
+        {selected ? <View style={[styles.ring, { borderColor: theme.inkOnDark }]} pointerEvents="none" /> : null}
       </Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  slot: {
-    borderRadius: 10,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    overflow: 'hidden',
+  spot: {
+    borderRadius: Radius.sm,
     alignItems: 'center',
+    paddingTop: Space[1],
+    overflow: 'hidden',
   },
-  slotFree: { borderColor: '#66BB6A', backgroundColor: 'rgba(102, 187, 106, 0.12)' },
-  slotOccupied: { borderColor: 'rgba(255, 255, 255, 0.35)', backgroundColor: 'rgba(244, 67, 54, 0.1)' },
-  parkLetter: {
+  center: { flex: 1, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center' },
+  badge: {
     position: 'absolute',
-    top: '26%',
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#66BB6A',
+    right: 3,
+    bottom: 3,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  carWrap: { position: 'absolute', top: 8, left: 0, right: 0, alignItems: 'center' },
-  label: { position: 'absolute', bottom: 4, fontSize: 12, fontWeight: '700' },
-  labelFree: { color: '#A5D6A7' },
-  labelOccupied: { color: 'rgba(255, 255, 255, 0.7)' },
+  badgeText: { ...Type.caption, fontSize: 11, lineHeight: 14 },
+  mine: {
+    position: 'absolute',
+    left: 3,
+    bottom: 3,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ring: { ...StyleSheet.absoluteFill, borderRadius: Radius.sm, borderWidth: 3 },
 });

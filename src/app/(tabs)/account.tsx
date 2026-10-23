@@ -1,57 +1,62 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Icon } from '@/components/ui/icon';
+import { Screen } from '@/components/ui/screen';
+import { Wordmark } from '@/components/ui/wordmark';
+import { Space, Type } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
+import { useTheme } from '@/hooks/use-theme';
+import { formatDuration, formatMoney, FREE_TIME_MS, PRICE_PER_HOUR } from '@/lib/pricing';
 
 export default function AccountScreen() {
+  const theme = useTheme();
   const { user, signOut } = useAuth();
 
   return (
-    <ThemedView style={styles.flex}>
-      <SafeAreaView style={styles.content} edges={['top', 'left', 'right']}>
-        <ThemedText style={styles.title}>Mi cuenta</ThemedText>
+    <Screen title="Mi cuenta">
+      <Card style={styles.profile}>
+        <View style={[styles.avatar, { backgroundColor: theme.brand }]}>
+          <Text style={[Type.title, { color: theme.inkOnDark }]}>{user?.name.charAt(0).toUpperCase()}</Text>
+        </View>
+        <View style={styles.flex}>
+          <ThemedText variant="subtitle" numberOfLines={1}>
+            {user?.name}
+          </ThemedText>
+          <ThemedText color="inkMuted" numberOfLines={1}>
+            {user?.email}
+          </ThemedText>
+        </View>
+      </Card>
 
-        <ThemedView type="backgroundElement" style={styles.card}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{user?.name.charAt(0).toUpperCase()}</Text>
-          </View>
-          <View style={styles.flex}>
-            <ThemedText style={styles.name} numberOfLines={1}>
-              {user?.name}
-            </ThemedText>
-            <ThemedText themeColor="textSecondary" numberOfLines={1}>
-              {user?.email}
-            </ThemedText>
-          </View>
-        </ThemedView>
+      <Card>
+        <View style={styles.row}>
+          <Icon name="cash" size={20} color={theme.accent} />
+          <ThemedText variant="subtitle">Tarifa</ThemedText>
+        </View>
+        <ThemedText color="inkMuted">
+          Las primeras {formatDuration(FREE_TIME_MS)} son gratis. Después, {formatMoney(PRICE_PER_HOUR)} por hora o fracción.
+        </ThemedText>
+      </Card>
 
-        <Pressable
-          onPress={signOut}
-          style={({ pressed }) => [styles.logout, { opacity: pressed ? 0.8 : 1 }]}>
-          <Text style={styles.logoutText}>Cerrar sesión</Text>
-        </Pressable>
-      </SafeAreaView>
-    </ThemedView>
+      <Button title="Cerrar sesión" variant="danger" icon="logout" onPress={signOut} />
+
+      <View style={styles.footer}>
+        <Wordmark size={22} />
+        <ThemedText variant="caption" color="inkMuted">
+          Encuentra lugar sin dar vueltas
+        </ThemedText>
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flex: 1, padding: 20, gap: 20 },
-  title: { fontSize: 28, fontWeight: '800', lineHeight: 36 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 16 },
-  avatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#1E88E5',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: 'white', fontSize: 22, fontWeight: '800' },
-  name: { fontSize: 18, fontWeight: '700' },
-  logout: { backgroundColor: '#EF5350', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
-  logoutText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  profile: { flexDirection: 'row', alignItems: 'center', gap: Space[4] },
+  avatar: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Space[2] },
+  footer: { alignItems: 'center', gap: Space[1], marginTop: Space[4] },
 });

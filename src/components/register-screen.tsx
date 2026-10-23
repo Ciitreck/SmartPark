@@ -1,22 +1,27 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { AuthInput, AuthLayout, authStyles } from '@/components/auth-layout';
+import { AuthLayout, AuthLink, FormError } from '@/components/auth-layout';
 import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { CarMascot } from '@/components/ui/car-mascot';
+import { TextField } from '@/components/ui/text-field';
+import { Space } from '@/constants/theme';
 import { useAuth } from '@/context/auth';
 import { useEntranceShake } from '@/hooks/use-entrance-shake';
-import { register } from '@/lib/auth';
+import { register, type AuthField } from '@/lib/auth';
 
 export default function RegisterScreen() {
   const { signIn } = useAuth();
   const { style, shake } = useEntranceShake();
 
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
+  const [field, setField] = useState<AuthField | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -26,9 +31,11 @@ export default function RegisterScreen() {
     setBusy(false);
     if (result.ok) {
       setError('');
+      setField(null);
       signIn(result.user); // entra directo a la app
     } else {
       setError(result.error);
+      setField(result.field ?? null);
       shake();
     }
   };
@@ -36,13 +43,17 @@ export default function RegisterScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/login'));
 
   return (
-    <AuthLayout animatedStyle={style}>
-      <ThemedText style={authStyles.logo}>🚗 Crear cuenta</ThemedText>
-      <ThemedText style={authStyles.subtitle}>Regístrate para usar Smart Park</ThemedText>
+    <AuthLayout animatedStyle={style} onBack={goBack}>
+      <View style={styles.hero}>
+        <ThemedText variant="display" align="center" accessibilityRole="header">
+          Únete a SmartPark
+        </ThemedText>
+        <CarMascot tone="mint" width={130} wave />
+      </View>
 
-      <AuthInput placeholder="Nombre" autoComplete="name" value={name} onChangeText={setName} />
-      <AuthInput
+      <TextField
         placeholder="Correo electrónico"
+        accessibilityLabel="Correo electrónico"
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="email"
@@ -50,39 +61,47 @@ export default function RegisterScreen() {
         textContentType="emailAddress"
         value={email}
         onChangeText={setEmail}
+        invalid={field === 'email'}
       />
-      <AuthInput
+      <TextField
+        placeholder="Nombre"
+        accessibilityLabel="Nombre"
+        autoComplete="name"
+        value={name}
+        onChangeText={setName}
+        invalid={field === 'name'}
+      />
+      <TextField
         placeholder="Contraseña (mínimo 6 caracteres)"
-        secureTextEntry
+        accessibilityLabel="Contraseña"
+        password
         autoComplete="new-password"
         value={password}
         onChangeText={setPassword}
+        invalid={field === 'password'}
       />
-      <AuthInput
+      <TextField
         placeholder="Confirmar contraseña"
-        secureTextEntry
+        accessibilityLabel="Confirmar contraseña"
+        password
         autoComplete="new-password"
         returnKeyType="go"
         value={confirm}
         onChangeText={setConfirm}
         onSubmitEditing={submit}
+        invalid={field === 'confirm'}
       />
 
-      {error ? <Text style={authStyles.error}>{error}</Text> : null}
+      <FormError message={error} />
 
-      <Pressable
-        onPress={submit}
-        disabled={busy}
-        style={({ pressed }) => [
-          authStyles.button,
-          { backgroundColor: '#43A047', opacity: pressed || busy ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
-        ]}>
-        <Text style={authStyles.buttonText}>{busy ? 'Creando cuenta…' : 'Registrarme'}</Text>
-      </Pressable>
+      <Button title={busy ? 'Creando tu cuenta…' : 'Crear cuenta'} onPress={submit} disabled={busy} style={styles.button} />
 
-      <Pressable onPress={goBack} style={authStyles.linkWrap}>
-        <ThemedText style={authStyles.link}>¿Ya tienes cuenta? Inicia sesión</ThemedText>
-      </Pressable>
+      <AuthLink text="¿Ya tienes cuenta?" action="Entra" onPress={goBack} />
     </AuthLayout>
   );
 }
+
+const styles = StyleSheet.create({
+  hero: { alignItems: 'center', gap: Space[6], marginBottom: Space[6] },
+  button: { marginTop: Space[3] },
+});

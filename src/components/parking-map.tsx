@@ -1,97 +1,117 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import type { ParkingSpace } from '@/constants/parking-layout';
-import { loadSpaces, saveSpaces } from '@/lib/parking-store';
-import ParkingSpot from './parking-spot';
+import { SPOTS_PER_ROW, type ParkingSpace, type SpotStatus } from '@/constants/parking-layout';
+import { MaxContentWidth, Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { displayStatus } from '@/lib/pricing';
 
-const PER_LINE = 5;
-const GAP = 8;
+import { ThemedText } from './themed-text';
+import ParkingSpot, { spotColors, STATUS_LABEL } from './parking-spot';
 
-export default function ParkingMap() {
+const GAP = Space[1];
+const PADDING = Space[4];
+
+type Props = {
+  spaces: ParkingSpace[];
+  now: number;
+  selectedId: string | null;
+  myStayId: string | null;
+  onSelect: (id: string) => void;
+};
+
+/** Cuadrícula de un sector, como elegir asiento en el cine: dos filas enfrentadas y un carril. */
+export default function ParkingMap({ spaces, now, selectedId, myStayId, onSelect }: Props) {
+  const theme = useTheme();
   const { width: screenWidth } = useWindowDimensions();
-  const [spaces, setSpaces] = useState(loadSpaces);
 
-  const [appear] = useState(() => new Animated.Value(0));
-  const [bump] = useState(() => new Animated.Value(1));
+  const mapWidth = Math.min(screenWidth, MaxContentWidth) - Space[6] * 2;
+  const spotWidth = Math.floor((mapWidth - PADDING * 2 - GAP * (SPOTS_PER_ROW - 1)) / SPOTS_PER_ROW);
+  const spotHeight = Math.max(64, Math.round(spotWidth * 1.3));
 
-  // El ancho de cada cajón se calcula según la pantalla, para que siempre quepan 5 por línea
-  const slotWidth = Math.floor((screenWidth - 20 - 24 - GAP * (PER_LINE - 1)) / PER_LINE);
+  const rows = ([1, 2] as const).map((row) =>
+    spaces.filter((s) => s.row === row).sort((a, b) => a.position - b.position)
+  );
 
-  const available = useMemo(() => spaces.filter((s) => s.isAvailable).length, [spaces]);
-
-  const rows = useMemo(() => {
-    const ordered = [...spaces].sort((a, b) => a.row - b.row || a.position - b.position);
-    const byRow = new Map<number, { space: ParkingSpace; index: number }[]>();
-    ordered.forEach((space, index) => {
-      const list = byRow.get(space.row) ?? [];
-      list.push({ space, index });
-      byRow.set(space.row, list);
-    });
-    return Array.from(byRow.entries());
-  }, [spaces]);
-
-  const toggle = useCallback((id: string) => {
-    setSpaces((prev) => {
-      const next = prev.map((s) => (s.id === id ? { ...s, isAvailable: !s.isAvailable } : s));
-      saveSpaces(next); // se conserva al cerrar la app
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    Animated.timing(appear, { toValue: 1, duration: 450, useNativeDriver: true }).start();
-  }, [appear]);
-
-  // El contador "rebota" cada vez que cambia
-  useEffect(() => {
-    Animated.sequence([
-      Animated.timing(bump, { toValue: 1.15, duration: 110, useNativeDriver: true }),
-      Animated.spring(bump, { toValue: 1, useNativeDriver: true }),
-    ]).start();
-  }, [available, bump]);
+  const renderRow = (items: ParkingSpace[]) => (
+    <View style={styles.row}>
+      {items.map((space) => (
+        <ParkingSpot
+          key={space.id}
+          space={space}
+          status={displayStatus(space, now)}
+          width={spotWidth}
+          height={spotHeight}
+          selected={selectedId === space.id}
+          mine={myStayId === space.id}
+          onPress={() => onSelect(space.id)}
+        />
+      ))}
+    </View>
+  );
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          opacity: appear,
-          transform: [{ translateY: appear.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
-        },
-      ]}>
-      <Animated.View style={[styles.counter, { transform: [{ scale: bump }] }]}>
-        <Text style={styles.counterNumber}>{available}</Text>
-        <Text style={styles.counterText}> de {spaces.length} lugares disponibles</Text>
-      </Animated.View>
+    <View style={{ gap: Space[3] }}>
+      <View style={[styles.map, { backgroundColor: theme.asphalt }]}>
+        {renderRow(rows[0])}
+        <Lane color={theme.laneLine} />
+        {renderRow(rows[1])}
+      </View>
+      <Legend />
+    </View>
+  );
+}
 
-      {rows.map(([row, items]) => (
-        <View key={row} style={styles.row}>
-          {items.map(({ space, index }) => (
-            <ParkingSpot
-              key={space.id}
-              space={space}
-              width={slotWidth}
-              index={index}
-              onPress={() => toggle(space.id)}
-            />
-          ))}
-        </View>
+/** Carril con guiones `lane-line`. */
+function Lane({ color }: { color: string }) {
+  return (
+    <View style={styles.lane} accessible={false}>
+      {Array.from({ length: 9 }, (_, i) => (
+        <View key={i} style={[styles.dash, { backgroundColor: color }]} />
       ))}
-    </Animated.View>
+    </View>
+  );
+}
+
+const LEGEND: SpotStatus[] = ['libre', 'ocupado', 'reservado', 'excedido', 'sinSenal'];
+
+function Legend() {
+  const theme = useTheme();
+  return (
+    <View style={styles.legend}>
+      {LEGEND.map((status) => {
+        const { fill } = spotColors(status, theme);
+        return (
+          <View key={status} style={styles.legendItem}>
+            <View
+              style={[
+                styles.swatch,
+                status === 'sinSenal'
+                  ? { borderWidth: 1.5, borderStyle: 'dashed', borderColor: theme.spotOffline }
+                  : { backgroundColor: fill },
+              ]}
+            />
+            <ThemedText variant="caption" color="inkMuted">
+              {STATUS_LABEL[status]}
+            </ThemedText>
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    margin: 10,
-    padding: 12,
-    borderRadius: 20,
-    backgroundColor: '#2B2F36', // asfalto
-    gap: 22,
+  map: { borderRadius: Radius.md, padding: PADDING },
+  row: { flexDirection: 'row', justifyContent: 'center', gap: GAP },
+  lane: {
+    height: Space[6] + Space[4],
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: Space[2],
   },
-  counter: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center' },
-  counterNumber: { fontSize: 28, fontWeight: '800', color: '#66BB6A' },
-  counterText: { fontSize: 16, fontWeight: '600', color: '#ECEFF1' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: GAP },
+  dash: { width: 16, height: 3, borderRadius: 2 },
+  legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', columnGap: Space[4], rowGap: Space[2] },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: Space[1] + 2 },
+  swatch: { width: 12, height: 12, borderRadius: 3 },
 });

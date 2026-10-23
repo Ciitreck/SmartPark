@@ -1,51 +1,77 @@
 import type { PropsWithChildren } from 'react';
-import { Animated, KeyboardAvoidingView, ScrollView, StyleSheet, TextInput, type TextInputProps } from 'react-native';
+import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ThemedView } from '@/components/themed-view';
+import { Icon } from '@/components/ui/icon';
+import { Space, Type } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Props = PropsWithChildren<{ animatedStyle: object }>;
+type Props = PropsWithChildren<{ animatedStyle: object; onBack?: () => void }>;
 
-/** Contenedor común de login y registro: evita que el teclado tape los campos. */
-export function AuthLayout({ animatedStyle, children }: Props) {
+/** Contenedor común de entrar y registro: fondo azul pálido y el teclado no tapa los campos. */
+export function AuthLayout({ animatedStyle, onBack, children }: Props) {
+  const theme = useTheme();
   return (
-    <ThemedView style={styles.flex}>
+    <View style={[styles.flex, { backgroundColor: theme.surface100 }]}>
       <SafeAreaView style={styles.flex}>
-        <KeyboardAvoidingView style={styles.flex}>
+        {onBack ? (
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Regresar"
+            hitSlop={Space[2]}
+            style={[styles.back, { backgroundColor: theme.surface200 }]}>
+            <Icon name="back" size={24} color={theme.ink} />
+          </Pressable>
+        ) : null}
+        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-            <Animated.View style={[styles.card, animatedStyle]}>{children}</Animated.View>
+            <Animated.View style={[styles.column, animatedStyle]}>{children}</Animated.View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ThemedView>
+    </View>
   );
 }
 
-export function AuthInput(props: TextInputProps) {
-  const colors = useTheme();
+/** Mensaje de error del formulario, en `danger` y `caption`. */
+export function FormError({ message }: { message: string }) {
+  const theme = useTheme();
+  if (!message) return null;
   return (
-    <TextInput
-      placeholderTextColor="#888"
-      {...props}
-      style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text }]}
-    />
+    <Text accessibilityRole="alert" style={[Type.caption, { color: theme.danger, textAlign: 'center' }]}>
+      {message}
+    </Text>
   );
 }
 
-export const authStyles = StyleSheet.create({
-  logo: { fontSize: 32, fontWeight: '800', textAlign: 'center' },
-  subtitle: { textAlign: 'center', opacity: 0.7, marginBottom: 12 },
-  error: { color: '#EF5350', textAlign: 'center', fontWeight: '600' },
-  button: { borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
-  buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  linkWrap: { alignItems: 'center', paddingVertical: 8 },
-  link: { fontWeight: '600', opacity: 0.8 },
-});
+/** "¿Ya tienes cuenta? **Entra**": texto `ink` con la palabra clave subrayada. */
+export function AuthLink({ text, action, onPress }: { text: string; action: string; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="link" style={styles.link} hitSlop={Space[2]}>
+      <Text style={[Type.body, { color: theme.ink, textAlign: 'center' }]}>
+        {text} <Text style={[Type.label, styles.underline, { color: theme.ink }]}>{action}</Text>
+      </Text>
+    </Pressable>
+  );
+}
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  card: { gap: 14 },
-  input: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16 },
+  back: {
+    position: 'absolute',
+    top: Space[4],
+    left: Space[6],
+    zIndex: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: Space[6], paddingVertical: Space[12] },
+  column: { gap: Space[3], width: '100%', maxWidth: 420, alignSelf: 'center' },
+  link: { alignItems: 'center', paddingVertical: Space[3] },
+  underline: { textDecorationLine: 'underline' },
 });
