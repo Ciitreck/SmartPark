@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "apk-SMARTPARK",
+    "name": "SMARTPARK",
     "slug": "apk-SMARTPARK",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/smart-park.png",
     "scheme": "apksmartpark",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.citreck.apkSMARTPARK"
     },
     "web": {
       "output": "server",
@@ -32,11 +33,23 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "acf45c1b-d489-4044-aa3e-4341e04abe0e"
+      }
+    },
+    "owner": "citreck"
   }
 }

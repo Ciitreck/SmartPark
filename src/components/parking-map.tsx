@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Animated, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 
-import { parkingLayout, type ParkingSpace } from '@/constants/parking-layout';
+import type { ParkingSpace } from '@/constants/parking-layout';
+import { loadSpaces, saveSpaces } from '@/lib/parking-store';
 import ParkingSpot from './parking-spot';
 
 const PER_LINE = 5;
@@ -9,10 +10,10 @@ const GAP = 8;
 
 export default function ParkingMap() {
   const { width: screenWidth } = useWindowDimensions();
-  const [spaces, setSpaces] = useState(parkingLayout);
+  const [spaces, setSpaces] = useState(loadSpaces);
 
-  const appear = useRef(new Animated.Value(0)).current;
-  const bump = useRef(new Animated.Value(1)).current;
+  const [appear] = useState(() => new Animated.Value(0));
+  const [bump] = useState(() => new Animated.Value(1));
 
   // El ancho de cada cajón se calcula según la pantalla, para que siempre quepan 5 por línea
   const slotWidth = Math.floor((screenWidth - 20 - 24 - GAP * (PER_LINE - 1)) / PER_LINE);
@@ -31,7 +32,11 @@ export default function ParkingMap() {
   }, [spaces]);
 
   const toggle = useCallback((id: string) => {
-    setSpaces((prev) => prev.map((s) => (s.id === id ? { ...s, isAvailable: !s.isAvailable } : s)));
+    setSpaces((prev) => {
+      const next = prev.map((s) => (s.id === id ? { ...s, isAvailable: !s.isAvailable } : s));
+      saveSpaces(next); // se conserva al cerrar la app
+      return next;
+    });
   }, []);
 
   useEffect(() => {

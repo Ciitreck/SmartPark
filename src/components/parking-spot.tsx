@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
 import type { ParkingSpace } from '@/constants/parking-layout';
@@ -18,8 +18,8 @@ export default function ParkingSpot({ space, width, index, onPress }: Props) {
   const occupied = !space.isAvailable;
   const color = CAR_COLORS[parseInt(space.id, 10) % CAR_COLORS.length];
 
-  const parked = useRef(new Animated.Value(0)).current; // 0 = vacío, 1 = estacionado
-  const press = useRef(new Animated.Value(1)).current;
+  const [parked] = useState(() => new Animated.Value(0)); // 0 = vacío, 1 = estacionado
+  const [press] = useState(() => new Animated.Value(1));
   const first = useRef(true);
 
   useEffect(() => {
