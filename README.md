@@ -16,7 +16,7 @@ App Android para ver los cajones libres de un estacionamiento, estacionarte, lle
 ![Firebase](https://img.shields.io/badge/Firebase_Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
 ![Estado](https://img.shields.io/badge/estado-en%20desarrollo-2A5BF0?style=flat-square)
-![Versión](https://img.shields.io/badge/versi%C3%B3n-2.0.0-2ED47A?style=flat-square)
+![Versión](https://img.shields.io/badge/versi%C3%B3n-0.2.0-2ED47A?style=flat-square)
 ![Plataforma](https://img.shields.io/badge/plataforma-Android%20%7C%20Web-0B1230?style=flat-square)
 
 <br />
