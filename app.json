@@ -7,9 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "apksmartpark",
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "icon": "./assets/expo.icon"
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#2A5BF0",
